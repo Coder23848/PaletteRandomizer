@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{48F17CFB-D4AF-4EAA-9C4E-6EB3A4081D8A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PaletteRandomizer", "src\plugin\PaletteRandomizer.csproj", "{C55B8C40-606C-49B0-A96A-CA5D91037915}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "mod", "mod", "{3BE14D79-AA79-4156-8011-0EF163B743B9}"
+	ProjectSection(SolutionItems) = preProject
+		mod\modinfo.json = mod\modinfo.json
+		mod\thumbnail.png = mod\thumbnail.png
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9325769F-6BCA-4045-B811-44763E5273EB}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thumbnailparts", "thumbnailparts", "{356A9BDC-B294-4EDB-8E83-A2680DD8A048}"
+	ProjectSection(SolutionItems) = preProject
+		thumbnailparts\Monk_SU_B04.png = thumbnailparts\Monk_SU_B04.png
+		thumbnailparts\Rivulet_GATE_SI_VS.png = thumbnailparts\Rivulet_GATE_SI_VS.png
+		thumbnailparts\Spearmaster_SB_C01.png = thumbnailparts\Spearmaster_SB_C01.png
+		thumbnailparts\Survivor_CC_C03.png = thumbnailparts\Survivor_CC_C03.png
+		thumbnailparts\Thumbnail.xcf = thumbnailparts\Thumbnail.xcf
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C55B8C40-606C-49B0-A96A-CA5D91037915}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C55B8C40-606C-49B0-A96A-CA5D91037915}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C55B8C40-606C-49B0-A96A-CA5D91037915}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C55B8C40-606C-49B0-A96A-CA5D91037915}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C55B8C40-606C-49B0-A96A-CA5D91037915} = {48F17CFB-D4AF-4EAA-9C4E-6EB3A4081D8A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4A5FC9D9-E620-4E00-BBCE-5B92D66C78A9}
+	EndGlobalSection
+EndGlobal

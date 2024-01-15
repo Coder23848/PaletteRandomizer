@@ -1,0 +1,12 @@
+{
+	"id": "paletterandomizer",
+	"name": "Palette Randomizer",
+	"version": "1.0.0",
+	"hide_version": false,
+	"authors": "Coder23848",
+	"description": "Randomizes the game's color palettes.",
+	"requirements": [],
+	"requirements_names": [],
+	"checksum_override_version": false,
+	"tags": [ "Cosmetics" ]
+}
