@@ -15,6 +15,7 @@ namespace PaletteRandomizer
 #pragma warning restore IDE0051
         {
             On.RoomCamera.LoadPalette += RoomCamera_LoadPalette;
+            On.RoomCamera.LoadGhostPalette += RoomCamera_LoadGhostPalette;
 
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
             On.RainWorldGame.ctor += RainWorldGame_ctor;
@@ -38,7 +39,6 @@ namespace PaletteRandomizer
 
         public static List<PaletteInfo> allPalettes;
         public static readonly ConditionalWeakTable<RainWorldGame, Dictionary<int, int>> paletteMaps = new();
-        public static readonly List<int> EchoPalettes = new() { 32, 33 };
         /// <summary>
         /// A palette is considered "dark" if the brightness channel and all of the normal unlit channels are below this value.
         /// </summary>
@@ -127,8 +127,7 @@ namespace PaletteRandomizer
             foreach (var oldPal in allPalettes)
             {
                 PaletteInfo newPal;
-                if ((PluginOptions.LeaveEchoes.Value && EchoPalettes.Contains(oldPal.Index)) ||
-                    (PluginOptions.DarkTreatment.Value == PluginOptions.DARKTREATMENT_DONOTRANDOMIZE && oldPal.IsDark))
+                if (PluginOptions.DarkTreatment.Value == PluginOptions.DARKTREATMENT_DONOTRANDOMIZE && oldPal.IsDark)
                 {
                     newPal = oldPal;
                 }
@@ -136,10 +135,6 @@ namespace PaletteRandomizer
                 {
                     List<PaletteInfo> choices = unusedPalettes.Where(x =>
                     {
-                        if (PluginOptions.LeaveEchoes.Value && EchoPalettes.Contains(x.Index))
-                        {
-                            return false;
-                        }
                         if (PluginOptions.DarkTreatment.Value == PluginOptions.DARKTREATMENT_DONOTRANDOMIZE && x.IsDark)
                         {
                             return false;
@@ -182,7 +177,21 @@ namespace PaletteRandomizer
         }
         private void RoomCamera_LoadPalette(On.RoomCamera.orig_LoadPalette orig, RoomCamera self, int pal, ref Texture2D texture)
         {
-            orig(self, RandomizePalette(pal, self.game), ref texture);
+            if (inLoadGhostPalette && PluginOptions.LeaveEchoes.Value)
+            {
+                orig(self, pal, ref texture);
+            }
+            else
+            {
+                orig(self, RandomizePalette(pal, self.game), ref texture);
+            }
+        }
+        private static bool inLoadGhostPalette = false;
+        private void RoomCamera_LoadGhostPalette(On.RoomCamera.orig_LoadGhostPalette orig, RoomCamera self, int gPal)
+        {
+            inLoadGhostPalette = true;
+            orig(self, gPal);
+            inLoadGhostPalette = false;
         }
 
         private void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)

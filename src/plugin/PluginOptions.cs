@@ -9,7 +9,7 @@ namespace PaletteRandomizer
         public static PluginOptions Instance = new();
 
         public static Configurable<int> Seed = Instance.config.Bind("Seed", 0, new ConfigurableInfo("The seed to use for randomization.", new ConfigAcceptableRange<int>(0, 1000)));
-        public static Configurable<bool> LeaveEchoes = Instance.config.Bind("LeaveEchoes", true, new ConfigurableInfo("Prevent the echo palette from being randomized."));
+        public static Configurable<bool> LeaveEchoes = Instance.config.Bind("LeaveEchoes", false, new ConfigurableInfo("Prevent the echo palette from being randomized."));
         public static Configurable<string> DarkTreatment = Instance.config.Bind("DarkTreatment", DARKTREATMENT_RANDOMIZETODARK, new ConfigurableInfo("How very dark palettes should be affected by the randomizer."));
         public const string DARKTREATMENT_RANDOMIZE = "RANDOM";
         public const string DARKTREATMENT_RANDOMIZETODARK = "KEEPDARK";
