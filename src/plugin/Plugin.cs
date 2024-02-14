@@ -17,6 +17,8 @@ namespace PaletteRandomizer
             On.RoomCamera.LoadPalette += RoomCamera_LoadPalette;
             On.RoomCamera.LoadGhostPalette += RoomCamera_LoadGhostPalette;
 
+            On.RoomCamera.ApplyEffectColorsToPaletteTexture += RoomCamera_ApplyEffectColorsToPaletteTexture;
+
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
             On.RainWorldGame.ctor += RainWorldGame_ctor;
         }
@@ -151,10 +153,13 @@ namespace PaletteRandomizer
                         Debug.Log("Palette Randomizer: no good match for palette " + oldPal.Index + "! Selecting randomly...");
                         newPal = unusedPalettes[Random.Range(0, unusedPalettes.Count)];
                     }
-                    newPal = choices[Random.Range(0, choices.Count)];
+                    else
+                    {
+                        newPal = choices[Random.Range(0, choices.Count)];
+                    }
                 }
 
-                Debug.Log("Palette Randomizer: " + oldPal.Index + " -> " + newPal.Index);
+                Debug.Log("Palette Randomizer: Palette " + oldPal.Index + " -> " + newPal.Index);
                 ret.Add(oldPal.Index, newPal.Index);
                 unusedPalettes.Remove(newPal);
             }
@@ -194,6 +199,83 @@ namespace PaletteRandomizer
             inLoadGhostPalette = false;
         }
 
+
+
+        public static List<int> allEffectColors;
+        public static readonly ConditionalWeakTable<RainWorldGame, Dictionary<int, int>> effectColorMaps = new();
+
+        public static List<int> GetAllEffectColors()
+        {
+            string str = AssetManager.ResolveFilePath(string.Concat(new string[]
+            {
+                "Palettes",
+                Path.DirectorySeparatorChar.ToString(),
+                "effectcolors.png"
+            }));
+            Texture2D tex = new(32, 16, TextureFormat.ARGB32, false);
+            AssetManager.SafeWWWLoadTexture(ref tex, "file:///" + str, false, true);
+
+            Debug.Log("Palette Randomizer: Found " + tex.width / 2 + " effect colors at " + str);
+
+            List<int> ret = new();
+            for (int i = 0; i < tex.width / 2; i++)
+            {
+                ret.Add(i);
+            }
+
+            return ret;
+        }
+        public static Dictionary<int, int> GenerateEffectColorMap(int seed)
+        {
+            Random.State randomState = Random.state;
+            Random.InitState(seed);
+
+            Debug.Log("Palette Randomizer: Randomizing effect colors with seed " + seed);
+
+            List<int> unusedEffectColors = new();
+            foreach (var i in allEffectColors)
+            {
+                unusedEffectColors.Add(i);
+            }
+
+            Dictionary<int, int> ret = new();
+
+            foreach (var oldCol in allEffectColors)
+            {
+                int newCol = unusedEffectColors[Random.Range(0, unusedEffectColors.Count)];
+
+                Debug.Log("Palette Randomizer: Effect Color " + oldCol + " -> " + newCol);
+                ret.Add(oldCol, newCol);
+                unusedEffectColors.Remove(newCol);
+            }
+
+            Random.state = randomState;
+
+            return ret;
+        }
+        public int RandomizeEffectColor(int col, RainWorldGame game)
+        {
+            if (effectColorMaps.TryGetValue(game, out var effectColorMap))
+            {
+                if (effectColorMap.TryGetValue(col, out var ret))
+                {
+                    return ret;
+                }
+            }
+            return col;
+        }
+        private void RoomCamera_ApplyEffectColorsToPaletteTexture(On.RoomCamera.orig_ApplyEffectColorsToPaletteTexture orig, RoomCamera self, ref Texture2D texture, int color1, int color2)
+        {
+            if (PluginOptions.RandomEffectColors.Value)
+            {
+                orig(self, ref texture, RandomizeEffectColor(color1, self.game), RandomizeEffectColor(color2, self.game));
+            }
+            else
+            {
+                orig(self, ref texture, color1, color2);
+            }
+        }
+
         private void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
             orig(self, manager);
@@ -222,6 +304,10 @@ namespace PaletteRandomizer
             }
             
             paletteMaps.Add(self, GeneratePaletteMap(seed));
+            if (PluginOptions.RandomEffectColors.Value)
+            {
+                effectColorMaps.Add(self, GenerateEffectColorMap(seed));
+            }
 
             // These load during RainWorldGame.ctor, so I'm just going to reload them again afterwards. I hope this doesn't break anything...
             self.cameras[0].LoadGhostPalette(32);
@@ -235,6 +321,7 @@ namespace PaletteRandomizer
             Debug.Log("Palette Randomizer config setup: " + MachineConnector.SetRegisteredOI(PluginInfo.PLUGIN_GUID, PluginOptions.Instance));
 
             allPalettes = GetAllPalettes();
+            allEffectColors = GetAllEffectColors();
         }
     }
 }

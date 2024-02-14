@@ -10,6 +10,7 @@ namespace PaletteRandomizer
 
         public static Configurable<int> Seed = Instance.config.Bind("Seed", 0, new ConfigurableInfo("The seed to use for randomization.", new ConfigAcceptableRange<int>(0, 1000)));
         public static Configurable<bool> LeaveEchoes = Instance.config.Bind("LeaveEchoes", false, new ConfigurableInfo("Prevent the echo palette from being randomized."));
+        public static Configurable<bool> RandomEffectColors = Instance.config.Bind("RandomEffectColors", true, new ConfigurableInfo("Randomize secondary colors, such as those of plants and signs."));
         public static Configurable<string> DarkTreatment = Instance.config.Bind("DarkTreatment", DARKTREATMENT_RANDOMIZETODARK, new ConfigurableInfo("How very dark palettes should be affected by the randomizer."));
         public const string DARKTREATMENT_RANDOMIZE = "RANDOM";
         public const string DARKTREATMENT_RANDOMIZETODARK = "KEEPDARK";
@@ -29,12 +30,13 @@ namespace PaletteRandomizer
 
             IntBoxOption(Seed, 100, 0, "Seed");
             CheckBoxOption(LeaveEchoes, 1, "Do not randomize echoes");
-            DropDownOption(DarkTreatment, 2, 300, new() {
+            CheckBoxOption(RandomEffectColors, 2, "Randomize effect colors");
+            DropDownOption(DarkTreatment, 3, 300, new() {
                 new(DARKTREATMENT_RANDOMIZE, "Fully randomize", 0) { desc = "Randomize all palettes together, regardless of brightness." },
                 new(DARKTREATMENT_RANDOMIZETODARK, "Randomize to other dark palettes", 1) { desc = "Randomize dark palettes separately from brighter ones, to ensure that dark areas stay dark." },
                 new(DARKTREATMENT_DONOTRANDOMIZE, "Do not randomize", 2) { desc = "Do not randomize dark palettes, to ensure that dark areas stay dark." }
             }, "Dark Palette Treatment");
-            DropDownOption(RandomizeFrequency, 6, 300, new() { new(RANDOMIZEFREQUENCY_SEEDED, "Seed only", 0) { desc = "Randomize the palettes according to a seed." },
+            DropDownOption(RandomizeFrequency, 7, 300, new() { new(RANDOMIZEFREQUENCY_SEEDED, "Seed only", 0) { desc = "Randomize the palettes according to a seed." },
                 new(RANDOMIZEFREQUENCY_PERPLAYTHROUGH, "Once per save file", 1) { desc = "Randomize the palettes on a per-save-file basis." },
                 new(RANDOMIZEFREQUENCY_PERCYCLE, "Once per cycle", 2) { desc = "Randomize the palettes every successful cycle." },
                 new(RANDOMIZEFREQUENCY_PERATTEMPT, "Once per attempted cycle") { desc = "Randomize the palettes every cycle and every death." }
