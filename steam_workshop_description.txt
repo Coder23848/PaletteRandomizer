@@ -1,0 +1,5 @@
+Randomizes the game's color palettes.
+
+Should work with v1.9.07b, v1.9.15, and v1.10.4.
+
+Please report any bugs you find!

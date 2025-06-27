@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using BepInEx;
+using MonoMod.RuntimeDetour;
 using UnityEngine;
+using Watcher;
 
 namespace PaletteRandomizer
 {
@@ -14,13 +16,7 @@ namespace PaletteRandomizer
         private void OnEnable()
 #pragma warning restore IDE0051
         {
-            On.RoomCamera.LoadPalette += RoomCamera_LoadPalette;
-            On.RoomCamera.LoadGhostPalette += RoomCamera_LoadGhostPalette;
-
-            On.RoomCamera.ApplyEffectColorsToPaletteTexture += RoomCamera_ApplyEffectColorsToPaletteTexture;
-
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
-            On.RainWorldGame.ctor += RainWorldGame_ctor;
         }
 
         public struct PaletteInfo
@@ -39,6 +35,26 @@ namespace PaletteRandomizer
             }
         }
 
+        /*
+        public struct TerrainPaletteInfo
+        {
+            public string Name { get; set; }
+            public bool HasRain { get; set; }
+            public bool HasEcho { get; set; }
+            public TerrainPaletteInfo(string name, bool hasRain, bool hasEcho)
+            {
+                Name = name;
+                HasRain = hasRain;
+                HasEcho = hasEcho;
+            }
+
+            public override string ToString()
+            {
+                return $"[Terrain Palette \"{Name}\"" + (HasRain ? " (RAIN)" : "") + (HasEcho ? " (ECHO)" : "") + "]";
+            }
+        }
+        */
+
         public static List<PaletteInfo> allPalettes;
         public static readonly ConditionalWeakTable<RainWorldGame, Dictionary<int, int>> paletteMaps = new();
         /// <summary>
@@ -49,7 +65,7 @@ namespace PaletteRandomizer
         public static List<PaletteInfo> GetAllPalettes()
         {
             List<PaletteInfo> ret = new();
-            string[] files = AssetManager.ListDirectory("Palettes");
+            string[] files = AssetManager.ListDirectory("palettes");
             foreach (string i in files)
             {
                 string file = Path.GetFileName(i);
@@ -171,7 +187,11 @@ namespace PaletteRandomizer
 
         public int RandomizePalette(int pal, RainWorldGame game)
         {
-            if (paletteMaps.TryGetValue(game, out var paletteMap))
+            if (game == null)
+            {
+                Debug.LogWarning("Palette Randomizer: RandomizePalette called for palette " + pal + " with a null game. This should never happen in vanilla, so it's probably another mod's fault; stack trace is " + new System.Diagnostics.StackTrace().ToString());
+            }
+            else if (paletteMaps.TryGetValue(game, out var paletteMap))
             {
                 if (paletteMap.TryGetValue(pal, out var ret))
                 {
@@ -182,7 +202,9 @@ namespace PaletteRandomizer
         }
         private void RoomCamera_LoadPalette(On.RoomCamera.orig_LoadPalette orig, RoomCamera self, int pal, ref Texture2D texture)
         {
-            if (inLoadGhostPalette && PluginOptions.LeaveEchoes.Value)
+            if ((inLoadGhostPalette && PluginOptions.LeaveEchoes.Value) ||
+                (inLoadRotPalette && PluginOptions.LeaveRot.Value) ||
+                (inLoadGameplayPalette && PluginOptions.LeaveRippleSpace.Value))
             {
                 orig(self, pal, ref texture);
             }
@@ -191,12 +213,27 @@ namespace PaletteRandomizer
                 orig(self, RandomizePalette(pal, self.game), ref texture);
             }
         }
+
         private static bool inLoadGhostPalette = false;
+        private static bool inLoadRotPalette = false;
+        private static bool inLoadGameplayPalette = false;
         private void RoomCamera_LoadGhostPalette(On.RoomCamera.orig_LoadGhostPalette orig, RoomCamera self, int gPal)
         {
             inLoadGhostPalette = true;
             orig(self, gPal);
             inLoadGhostPalette = false;
+        }
+        private void RoomCamera_LoadRotPalette(On.RoomCamera.orig_LoadRotPalette orig, RoomCamera self, int rPal)
+        {
+            inLoadRotPalette = true;
+            orig(self, rPal);
+            inLoadRotPalette = false;
+        }
+        private void RippleCameraData_LoadGameplayPalette(On.Watcher.RippleCameraData.orig_LoadGameplayPalette orig, RippleCameraData self)
+        {
+            inLoadGameplayPalette = true;
+            orig(self);
+            inLoadGameplayPalette = false;
         }
 
 
@@ -208,7 +245,7 @@ namespace PaletteRandomizer
         {
             string str = AssetManager.ResolveFilePath(string.Concat(new string[]
             {
-                "Palettes",
+                "palettes",
                 Path.DirectorySeparatorChar.ToString(),
                 "effectcolors.png"
             }));
@@ -268,13 +305,127 @@ namespace PaletteRandomizer
         {
             if (PluginOptions.RandomEffectColors.Value)
             {
-                orig(self, ref texture, RandomizeEffectColor(color1, self.game), RandomizeEffectColor(color2, self.game));
+                orig(self, ref texture, RandomizeEffectColor(color1, self.game), (self.usingSentientRotEffectColor && PluginOptions.LeaveRotEffect.Value) ? color2 : RandomizeEffectColor(color2, self.game));
             }
             else
             {
                 orig(self, ref texture, color1, color2);
             }
         }
+
+        /*
+        public static List<TerrainPaletteInfo> allTerrainPalettes;
+        public static readonly ConditionalWeakTable<RainWorldGame, Dictionary<string, string>> terrainPaletteMaps = new();
+        
+        
+        public static List<TerrainPaletteInfo> GetAllTerrainPalettes()
+        {
+            List<TerrainPaletteInfo> ret = new();
+            string[] files = AssetManager.ListDirectory("terrainpalettes");
+            foreach (string i in files)
+            {
+                string file = Path.GetFileName(i);
+                string name = Path.GetFileNameWithoutExtension(i);
+                try
+                {
+                    if (file.EndsWith(".png") && !name.EndsWith("_rain") && !name.EndsWith("_echo"))
+                    {
+                        Debug.Log("Palette Randomizer: Found terrain palette " + name);
+                        
+                        ret.Add(new(name, files.Any(x => Path.GetFileName(i) == name + "_rain.png"), files.Any(x => Path.GetFileName(i) == name + "_echo.png")));
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.Log("Palette Randomizer: Could not load file " + i + ": " + ex);
+                }
+            }
+            ret.Sort();
+            return ret;
+        }
+        public static Dictionary<string, string> GenerateTerrainPaletteMap(int seed)
+        {
+            Random.State randomState = Random.state;
+            Random.InitState(seed);
+
+            Debug.Log("Palette Randomizer: Randomizing terrain palettes with seed " + seed);
+
+            List<TerrainPaletteInfo> unusedTerrainPalettes = new();
+            foreach (var i in allTerrainPalettes)
+            {
+                unusedTerrainPalettes.Add(i);
+            }
+
+            Dictionary<string, string> ret = new();
+
+            foreach (var oldPal in allTerrainPalettes)
+            {
+                List<TerrainPaletteInfo> choices = unusedTerrainPalettes.Where(x => {
+                    return x.HasRain == oldPal.HasRain && x.HasEcho == oldPal.HasEcho;
+                }).ToList();
+
+                TerrainPaletteInfo newPal;
+                if (choices.Count <= 0) // I'm pretty sure this can't happen, but just in case...
+                {
+                    Debug.Log("Palette Randomizer: no good match for palette " + oldPal.Name + "! Selecting randomly...");
+                    newPal = unusedTerrainPalettes[Random.Range(0, unusedTerrainPalettes.Count)];
+                }
+                else
+                {
+                    newPal = choices[Random.Range(0, choices.Count)];
+                }
+
+                Debug.Log("Palette Randomizer: Terrain Palette " + oldPal + " -> " + newPal);
+                ret.Add(oldPal.Name, newPal.Name);
+                unusedTerrainPalettes.Remove(newPal);
+            }
+
+            Random.state = randomState;
+
+            return ret;
+        }
+        public string RandomizeTerrainPalette(string pal, RainWorldGame game)
+        {
+            if (terrainPaletteMaps.TryGetValue(game, out var terrainPaletteMap))
+            {
+                if (terrainPaletteMap.TryGetValue(pal, out var ret))
+                {
+                    return ret;
+                }
+            }
+            return pal;
+        }
+        private Texture2D PaletteInfo_LoadTex(On.TerrainPalette.PaletteInfo.orig_LoadTex orig, TerrainPalette.PaletteInfo self, string imageName)
+        {
+            if (PluginOptions.RandomTerrainPalettes.Value)
+            {
+                string basePal;
+                string type;
+                if (imageName.EndsWith("_rain"))
+                {
+                    basePal = imageName.Substring(0, imageName.Length - 5);
+                    type = "_rain";
+                }
+                else if (imageName.EndsWith("_echo"))
+                {
+                    basePal = imageName.Substring(0, imageName.Length - 5);
+                    type = "_echo";
+                }
+                else
+                {
+                    basePal = imageName;
+                    type = "";
+                }
+                // TODO
+            }
+            else
+            {
+                orig(self, imageName);
+            }
+        }
+        */
+
+
 
         private void RainWorldGame_ctor(On.RainWorldGame.orig_ctor orig, RainWorldGame self, ProcessManager manager)
         {
@@ -310,13 +461,31 @@ namespace PaletteRandomizer
             }
 
             // These load during RainWorldGame.ctor, so I'm just going to reload them again afterwards. I hope this doesn't break anything...
-            self.cameras[0].LoadGhostPalette(32);
-            self.cameras[0].ChangeMainPalette(0);
+            foreach (RoomCamera camera in self.cameras)
+            {
+                camera.LoadGhostPalette(32);
+                camera.LoadRotPalette(466);
+                camera.ChangeMainPalette(0);
+                camera.rippleData?.LoadGameplayPalette();
+                camera.warpRippleData?.LoadGameplayPalette();
+            }
         }
 
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+
+            On.RoomCamera.LoadPalette += RoomCamera_LoadPalette;
+
+            On.RoomCamera.ApplyEffectColorsToPaletteTexture += RoomCamera_ApplyEffectColorsToPaletteTexture;
+
+            //On.TerrainPalette.PaletteInfo.LoadTex += PaletteInfo_LoadTex;
+
+            On.RoomCamera.LoadGhostPalette += RoomCamera_LoadGhostPalette;
+            On.RoomCamera.LoadRotPalette += RoomCamera_LoadRotPalette;
+            On.Watcher.RippleCameraData.LoadGameplayPalette += RippleCameraData_LoadGameplayPalette; // This particular hook needs to be in OnModsInit rather than OnEnable, or the mod will break.
+
+            On.RainWorldGame.ctor += RainWorldGame_ctor;
 
             Debug.Log("Palette Randomizer config setup: " + MachineConnector.SetRegisteredOI(PluginInfo.PLUGIN_GUID, PluginOptions.Instance));
 

@@ -16,6 +16,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9325769F-6BCA-4045-B811-44763E5273EB}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		steam_workshop_description.txt = steam_workshop_description.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thumbnailparts", "thumbnailparts", "{356A9BDC-B294-4EDB-8E83-A2680DD8A048}"
