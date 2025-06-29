@@ -454,9 +454,19 @@ namespace PaletteRandomizer
                 };
             }
             
+            if (paletteMaps.TryGetValue(self, out _))
+            {
+                Debug.LogWarning("Palette Randomizer: Current game already has a palette map? This shouldn't happen, but for some reason it does anyways. Resetting the palette map...");
+                paletteMaps.Remove(self);
+            }
             paletteMaps.Add(self, GeneratePaletteMap(seed));
             if (PluginOptions.RandomEffectColors.Value)
             {
+                if (effectColorMaps.TryGetValue(self, out _))
+                {
+                    Debug.LogWarning("Palette Randomizer: Current game already has an effect color map? This shouldn't happen, but for some reason it does anyways. Resetting the effect color map...");
+                    effectColorMaps.Remove(self);
+                }
                 effectColorMaps.Add(self, GenerateEffectColorMap(seed));
             }
 
