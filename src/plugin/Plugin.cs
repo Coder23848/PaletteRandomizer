@@ -17,6 +17,7 @@ namespace PaletteRandomizer
 #pragma warning restore IDE0051
         {
             On.RainWorld.OnModsInit += RainWorld_OnModsInit;
+            On.RainWorld.PostModsInit += RainWorld_PostModsInit;
         }
 
         public struct PaletteInfo
@@ -454,19 +455,9 @@ namespace PaletteRandomizer
                 };
             }
             
-            if (paletteMaps.TryGetValue(self, out _))
-            {
-                Debug.LogWarning("Palette Randomizer: Current game already has a palette map? This shouldn't happen, but for some reason it does anyways. Resetting the palette map...");
-                paletteMaps.Remove(self);
-            }
             paletteMaps.Add(self, GeneratePaletteMap(seed));
             if (PluginOptions.RandomEffectColors.Value)
             {
-                if (effectColorMaps.TryGetValue(self, out _))
-                {
-                    Debug.LogWarning("Palette Randomizer: Current game already has an effect color map? This shouldn't happen, but for some reason it does anyways. Resetting the effect color map...");
-                    effectColorMaps.Remove(self);
-                }
                 effectColorMaps.Add(self, GenerateEffectColorMap(seed));
             }
 
@@ -481,9 +472,18 @@ namespace PaletteRandomizer
             }
         }
 
+        private static bool hooksApplied = false;
         private void RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
         {
             orig(self);
+
+            Debug.Log("Palette Randomizer config setup: " + MachineConnector.SetRegisteredOI(PluginInfo.PLUGIN_GUID, PluginOptions.Instance));
+
+            if (hooksApplied)
+            {
+                return;
+            }
+            hooksApplied = true;
 
             On.RoomCamera.LoadPalette += RoomCamera_LoadPalette;
 
@@ -496,9 +496,10 @@ namespace PaletteRandomizer
             On.Watcher.RippleCameraData.LoadGameplayPalette += RippleCameraData_LoadGameplayPalette; // This particular hook needs to be in OnModsInit rather than OnEnable, or the mod will break.
 
             On.RainWorldGame.ctor += RainWorldGame_ctor;
+        }
 
-            Debug.Log("Palette Randomizer config setup: " + MachineConnector.SetRegisteredOI(PluginInfo.PLUGIN_GUID, PluginOptions.Instance));
-
+        private void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
+        {
             allPalettes = GetAllPalettes();
             allEffectColors = GetAllEffectColors();
         }
