@@ -500,6 +500,8 @@ namespace PaletteRandomizer
 
         private void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
         {
+            orig(self);
+
             allPalettes = GetAllPalettes();
             allEffectColors = GetAllEffectColors();
         }

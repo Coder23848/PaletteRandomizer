@@ -1,7 +1,7 @@
 {
 	"id": "paletterandomizer",
 	"name": "Palette Randomizer",
-	"version": "1.1.5",
+	"version": "1.1.6",
 	"hide_version": false,
 	"authors": "Coder23848",
 	"description": "Randomizes the game's color palettes.",
